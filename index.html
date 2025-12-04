@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subnet Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      background: #0f172a;
+      font-family: Arial, sans-serif;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .box {
+      background: #020617;
+      padding: 25px;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #38bdf8;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #38bdf8;
+      color: #020617;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    .result {
+      margin-top: 15px;
+      background: #020617;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .label {
+      color: #38bdf8;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="box">
+    <h1>Subnet Calculator</h1>
+
+    <input type="text" id="ip" placeholder="Enter IP Address (e.g. 192.168.1.10)">
+    <input type="number" id="cidr" placeholder="Enter CIDR (e.g. 24)">
+
+    <button onclick="calculate()">Calculate</button>
+
+    <div class="result" id="output"></div>
+  </div>
+
+  <script>
+    function calculate() {
+      const ipInput = document.getElementById("ip").value.trim();
+      const cidr = Number(document.getElementById("cidr").value);
+      const output = document.getElementById("output");
+
+      // Basic validation
+      if (!ipInput || cidr < 0 || cidr > 32) {
+        output.innerHTML = "❌ Enter a valid IP and CIDR (0–32)";
+        return;
+      }
+
+      const ipParts = ipInput.split(".").map(Number);
+
+      if (ipParts.length !== 4 || ipParts.some(x => x < 0 || x > 255)) {
+        output.innerHTML = "❌ Invalid IP format";
+        return;
+      }
+
+      // Convert IP to 32-bit binary
+      const binaryIP = ipParts
+        .map(octet => octet.toString(2).padStart(8, "0"))
+        .join("");
+
+      // Create subnet mask in binary
+      const maskBinary =
+        "1".repeat(cidr) + "0".repeat(32 - cidr);
+
+      // Calculate Network Address
+      let networkBinary = "";
+      for (let i = 0; i < 32; i++) {
+        networkBinary += binaryIP[i] === "1" && maskBinary[i] === "1" ? "1" : "0";
+      }
+
+      // Calculate Broadcast Address
+      const broadcastBinary =
+        networkBinary.slice(0, cidr) + "1".repeat(32 - cidr);
+
+      // Convert binary back to IP
+      const toIP = (bin) => {
+        return bin.match(/.{1,8}/g)
+                  .map(b => parseInt(b, 2))
+                  .join(".");
+      };
+
+      const networkIP = toIP(networkBinary);
+      const broadcastIP = toIP(broadcastBinary);
+
+      // First usable IP
+      const firstIP = toIP(
+        networkBinary.slice(0, 31) +
+        (Number(networkBinary[31]) + 1)
+      );
+
+      // Last usable IP
+      const lastIP = toIP(
+        broadcastBinary.slice(0, 31) +
+        (Number(broadcastBinary[31]) - 1)
+      );
+
+      // Subnet Mask from CIDR
+      const maskIP = toIP(maskBinary);
+
+      const totalHosts = Math.pow(2, 32 - cidr);
+      const usableHosts = totalHosts - 2;
+
+      output.innerHTML = `
+        <div><span class="label">Network Address:</span> ${networkIP}</div>
+        <div><span class="label">Broadcast Address:</span> ${broadcastIP}</div>
+        <div><span class="label">Subnet Mask:</span> ${maskIP}</div>
+        <div><span class="label">First Usable IP:</span> ${firstIP}</div>
+        <div><span class="label">Last Usable IP:</span> ${lastIP}</div>
+        <div><span class="label">Total Hosts:</span> ${totalHosts}</div>
+        <div><span class="label">Usable Hosts:</span> ${usableHosts}</div>
+      `;
+    }
+  </script>
+
+</body>
+</html>
