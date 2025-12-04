@@ -2,6 +2,9 @@
 A simple and fully working subnet calculator built using HTML, CSS, and JavaScript.  
 It calculates Network Address, Broadcast Address, Subnet Mask, First & Last Usable IP, and Host counts using CIDR notation.
 
+## Demo
+https://abhiwagh419.github.io/subnet-calculator/
+
 ## Features
 - Works for any valid IPv4 address
 - Supports CIDR from /0 to /32
